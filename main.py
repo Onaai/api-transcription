@@ -9,7 +9,7 @@ from youtube_transcript_api import (
 )
 from youtube_transcript_api.proxies import GenericProxyConfig
 import re
-import random
+import os
 
 app = FastAPI(title="YT Transcript API", version="2.0")
 
@@ -20,19 +20,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Webshare free plan usa proxy.webshare.io como endpoint central
-# Las IPs de la lista son los exit nodes pero la autenticación va al gateway
-PROXY_USER = "bnlubrxv"
-PROXY_PASS = "9subtsr8y6cv0"
+# IPRoyal residential proxy
+PROXY_USER = os.environ.get("PROXY_USER", "dbE7DGDQbY8Yhzib")
+PROXY_PASS = os.environ.get("PROXY_PASS", "zXzXdQ2EHJbuNCvs")
+PROXY_HOST = os.environ.get("PROXY_HOST", "geo.iproyal.com")
+PROXY_PORT = os.environ.get("PROXY_PORT", "12321")
 
-# Gateway central de Webshare con rotación automática
-WEBSHARE_PROXY = f"http://{PROXY_USER}:{PROXY_PASS}@p.webshare.io:80"
+PROXY_URL = f"http://{PROXY_USER}:{PROXY_PASS}@{PROXY_HOST}:{PROXY_PORT}"
+
+print(f"[INIT] Proxy configurado: {PROXY_HOST}:{PROXY_PORT}")
 
 def get_ytt():
     return YouTubeTranscriptApi(
         proxy_config=GenericProxyConfig(
-            http_url=WEBSHARE_PROXY,
-            https_url=WEBSHARE_PROXY,
+            http_url=PROXY_URL,
+            https_url=PROXY_URL,
         )
     )
 
@@ -128,15 +130,15 @@ def get_transcript(
     except HTTPException:
         raise
     except TranscriptsDisabled:
-        raise HTTPException(status_code=404, detail="Transcripciones deshabilitadas para este video.")
+        raise HTTPException(status_code=404, detail="Transcripciones deshabilitadas.")
     except NoTranscriptFound:
-        raise HTTPException(status_code=404, detail=f"No se encontró transcripción en: {', '.join(lang_list)}")
+        raise HTTPException(status_code=404, detail="Sin transcripción en los idiomas solicitados.")
     except VideoUnavailable:
-        raise HTTPException(status_code=404, detail="Video no disponible o privado.")
+        raise HTTPException(status_code=404, detail="Video no disponible.")
     except CouldNotRetrieveTranscript as e:
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/languages")
@@ -148,14 +150,16 @@ def get_languages(url: str = Query(...)):
 
     try:
         transcript_list = get_ytt().list(video_id)
-        languages = [
-            {
-                "code": t.language_code,
-                "name": t.language,
-                "is_auto_generated": t.is_generated,
-            }
-            for t in transcript_list
-        ]
-        return {"video_id": video_id, "available_languages": languages}
+        return {
+            "video_id": video_id,
+            "available_languages": [
+                {
+                    "code": t.language_code,
+                    "name": t.language,
+                    "is_auto_generated": t.is_generated,
+                }
+                for t in transcript_list
+            ]
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
