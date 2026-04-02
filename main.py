@@ -34,8 +34,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Instancia compartida (reutiliza la sesión HTTP entre requests)
-ytt = YouTubeTranscriptApi()
+from youtube_transcript_api.proxies import WebshareProxyConfig
+
+# Proxy residencial Webshare — evita el bloqueo de YouTube en servidores cloud
+ytt = YouTubeTranscriptApi(
+    proxy_config=WebshareProxyConfig(
+        proxy_username='bnlubrxv',
+        proxy_password='9subtsr8y6cv0',
+    )
+)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
