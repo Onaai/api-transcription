@@ -34,15 +34,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from youtube_transcript_api.proxies import WebshareProxyConfig
+from youtube_transcript_api.proxies import GenericProxyConfig
 
-# Proxy residencial Webshare — evita el bloqueo de YouTube en servidores cloud
-ytt = YouTubeTranscriptApi(
-    proxy_config=WebshareProxyConfig(
-        proxy_username='bnlubrxv',
-        proxy_password='9subtsr8y6cv0',
+# Proxies residenciales Webshare — rotación manual entre los 10 disponibles
+# Usamos GenericProxyConfig con las IPs directas del plan free
+PROXY_USER = 'bnlubrxv'
+PROXY_PASS = '9subtsr8y6cv0'
+
+# Lista de proxies del plan gratuito (IP:puerto)
+PROXIES = [
+    ('31.59.20.176', 6754),
+    ('23.95.150.145', 6114),
+    ('198.23.239.134', 6540),
+    ('45.38.107.97', 6014),
+    ('107.172.163.27', 6543),
+    ('198.105.121.200', 6462),
+    ('216.10.27.159', 6837),
+    ('142.111.67.146', 5611),
+    ('191.96.254.138', 6185),
+    ('31.58.9.4', 6077),
+]
+
+import random
+
+def get_ytt():
+    """Devuelve una instancia con un proxy aleatorio de la lista."""
+    ip, port = random.choice(PROXIES)
+    proxy_url = f'http://{PROXY_USER}:{PROXY_PASS}@{ip}:{port}'
+    return YouTubeTranscriptApi(
+        proxy_config=GenericProxyConfig(
+            http_url=proxy_url,
+            https_url=proxy_url,
+        )
     )
-)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -106,7 +130,7 @@ def get_transcript(
 
     try:
         # v1.2.x: usar list() para tener control sobre el idioma
-        transcript_list = ytt.list(video_id)
+        transcript_list = get_ytt().list(video_id)
 
         # Buscar transcript en orden de preferencia
         transcript = None
@@ -204,7 +228,7 @@ def get_languages(
         raise HTTPException(status_code=400, detail=str(e))
 
     try:
-        transcript_list = ytt.list(video_id)
+        transcript_list = get_ytt().list(video_id)
         languages = [
             {
                 "code": t.language_code,
