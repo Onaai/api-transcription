@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # YT Transcript API
 
 API propia para extraer transcripciones de YouTube. Usa `youtube-transcript-api` de Python.
@@ -28,3 +29,7 @@ Respuesta:
 4. Start: `uvicorn main:app --host 0.0.0.0 --port $PORT`
 5. Plan: Free
 6. Deploy → copiá la URL (ej: https://yt-transcript-api.onrender.com)
+=======
+# api-transcription
+Api para acceder a la transcripción de videos de youtube. Funciona en coop con la extensión...
+>>>>>>> ef70b9ee445e48ddea1438a6b60f28361dfd1938
